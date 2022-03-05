@@ -11,7 +11,7 @@ int clk = 5; //Pin 11
 int on=255;
 int off=0;
 
-int wait=999.5;
+unsigned long wait=999;
 
 int H=1;
 int h=8;
@@ -21,6 +21,8 @@ int S=5;
 int s=8;
 
 boolean colonAlt = false;
+unsigned long currentTime = millis();
+unsigned long previousTime = currentTime;
 
 float aplhaWorldLine[] = {0.571046,0.571024,0.571015,0.523307,0.523299,0.456914,0.456903,0.409431,0.409420,0.334581,0.337187,0.000000};
 float betaWorldLine[] = {1.130238,1.130205,1.129848,1.130212,1.130211,1.130209,1.130208,1.130206,1.130205,1.048596};
@@ -137,11 +139,9 @@ void clkUpdate(int Hour,int hour,int Minute,int minute, int Secound,int secound)
   if(colonAlt==false){
     shiftOut(data,clk,LSBFIRST,2);
     shiftOut(data,clk,LSBFIRST,4);
-    colonAlt=true;
   }else{
     shiftOut(data,clk,LSBFIRST,3);
     shiftOut(data,clk,LSBFIRST,5);
-    colonAlt=false;
   }
   shiftOut(data,clk,LSBFIRST,secound);
   shiftOut(data,clk,LSBFIRST,Secound);
@@ -156,43 +156,43 @@ void clkUpdate(int Hour,int hour,int Minute,int minute, int Secound,int secound)
   shiftOut(data,clk,LSBFIRST,hour);
   shiftOut(data,clk,LSBFIRST,Hour);
   digitalWrite(latch, HIGH);
-  if(s<=9){
-    s++;
-    delay(wait);
-  }else if(S<5){
-    if(colonAlt==false){
-      colonAlt=true;
+
+  currentTime = millis();
+  if(currentTime - previousTime > wait){
+    previousTime = currentTime;
+    colonAlt = !colonAlt;
+    if(s<9){
+      s++;
+    }else if(S<5){
+      s=0;
+      S++;
+    }else if(m<9){
+      S=-1;
+      m++;
+      //every minute program will excute anit-cathode poisioning sequence
+      antiPoisonTwo();
+    }else if(M<5){
+      m=-1;
+      M++;
+    }else if(h<9){
+      M=-1;
+      h++;
+    }else if(H<1){
+      h=-1;
+      H++;
     }else{
-      colonAlt=false;
+      h=-1;
+      H++;
     }
-    s=0;
-    S++;
-  }else if(m<9){
-    S=-1;
-    m++;
-    //every minute program will excute anit-cathode poisioning sequence
-    antiPoisonTwo();
-  }else if(M<5){
-    m=-1;
-    M++;
-  }else if(h<9){
-    M=-1;
-    h++;
-  }else if(H<1){
-    h=-1;
-    H++;
-  }else{
-    h=-1;
-    H++;
-  }
-  if(H>=2 && h>=4){
-    H=0;
-    h=0;
-    M=0;
-    m=0;
-    S=0;
-    s=0;
-    antiPoisonTwo();
+    if(H>=2 && h>=4){
+      H=0;
+      h=0;
+      M=0;
+      m=0;
+      S=0;
+      s=0;
+      antiPoisonTwo();
+    }
   }
 }
 
@@ -303,8 +303,3 @@ void loop(){
     Serial.flush();
   }
 }
-
-
-
-
-
